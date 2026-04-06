@@ -1,6 +1,5 @@
 #include <QTimer>
 #include <QPushButton>
-#include <QPointer>
 #include <QRandomGenerator>
 
 #include "mainwindow.h"
@@ -28,42 +27,38 @@ MainWindow::MainWindow(QWidget *parent)
     tm_spawn->setInterval(QRandomGenerator::global()->bounded(low_bound_ms, high_bound_ms));
     tm_spawn->start();
 
-    //Таймер на движение
-    auto tm_anim = new QTimer(this);
-    tm_anim->setInterval(move_interval);
-    tm_anim->start();
-
-    connect(tm_spawn, &QTimer::timeout, this, [tm_anim, tm_spawn, this] {
-        QPointer<QPushButton> btn = new QPushButton("*", this);
-        btn->setGeometry( (QRandomGenerator::global()->generateDouble() * this->width()),
+    connect(tm_spawn, &QTimer::timeout, this, [tm_spawn, this] {
+        QPushButton* btn = new QPushButton("*", this);
+        btn->setGeometry( (QRandomGenerator::global()->generateDouble() * (this->width() - btn_size_px)),
                           (QRandomGenerator::global()->generateDouble() * layout_up_spawn_px),
                           btn_size_px,
                           btn_size_px);
         btn->show();
 
+        //Удаление при нажатии
+        connect(btn, &QPushButton::clicked, this, [btn] {
+            btn->deleteLater();
+        });
+
+        //Таймер на движение
+        auto tm_anim = new QTimer(btn);
+        tm_anim->setInterval(move_interval);
+        tm_anim->start();
         //Логика анимации падения
         int velocity = QRandomGenerator::global()->bounded(velocity_low, velocity_hight);
-        connect(tm_anim, &QTimer::timeout, this, [velocity, btn, this] {
-            if(btn.isNull()) return;
-
+        connect(tm_anim, &QTimer::timeout, btn, [velocity, btn] {
             btn->move(btn->pos() + QPoint(0, btn->underMouse() ? velocity * velocity_multiplier : velocity));
+            auto parent = btn->parentWidget();
             //Проигрыш
-            if(btn->pos().y() > this->height()) {
-                this->setStyleSheet("QMainWindow  {background-color:red;}");
-                this->setWindowTitle("You LOOSE!");
+            if(btn->pos().y() >= parent->height() - btn_size_px / 2) {
+                parent->setStyleSheet("QMainWindow  {background-color:red;}");
+                parent->setWindowTitle("You LOOSE!");
                 btn->deleteLater();
             }
         });
 
-        //Удаление при нажатии
-        connect(btn, &QPushButton::clicked, this, [btn] {
-            if(btn.isNull()) return;
-            btn->deleteLater();
-        });
-
         //Перезапуск таймера с новым интервалом
         tm_spawn->setInterval(QRandomGenerator::global()->bounded(low_bound_ms, high_bound_ms));
-        tm_spawn->start();
     });
 
 }
