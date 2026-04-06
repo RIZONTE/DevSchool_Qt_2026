@@ -6,6 +6,8 @@
 #include "mainwindow.h"
 
 namespace {
+    constexpr int window_width = 300;
+    constexpr int window_height = 600;
     constexpr int low_bound_ms = 100;
     constexpr int high_bound_ms = 1000;
     constexpr int layout_up_spawn_px = 100;
@@ -19,9 +21,9 @@ namespace {
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    resize(300, 600);
+    resize(window_width, window_height);
 
-    //Таймер на появление прямоугольников
+    //Таймер на появление кнопок
     auto tm_spawn = new QTimer(this);
     tm_spawn->setInterval(QRandomGenerator::global()->bounded(low_bound_ms, high_bound_ms));
     tm_spawn->start();
@@ -55,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
 
         //Удаление при нажатии
         connect(btn, &QPushButton::clicked, this, [btn] {
+            if(btn.isNull()) return;
             btn->deleteLater();
         });
 
